@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simple Snake</title>
+  </head>
+  <body style="text-align:center;margin: 0 auto;">
+    <br>
+    <br>
+    <h3>Simple Snake</h3>
+    <canvas id="snake" width="800" height="600"></canvas>
+    <br>
+    <br>
+    <strong>Total Score: <span id="score">0</span></strong> | <strong>Max Score: <span id="maxscore">0</span></strong>
+    <br>
+    <br>
+    <small>Powered by <a href="https://crpwebdev.github.io" target="_blank" rel="me">Caio Ribeiro Pereira</a></small>
+    <script>
+      (() => {
+        let ctx;
+        let canvas;
+        let snakeMoveX = 5;
+        let snakeMoveY = 5;
+        let blockSize = 20;
+        let bgLimitX;
+        let bgLimitY;
+        let blockX = 20;
+        let blockY = 20;
+        let keyPressX = 0;
+        let keyPressY = 0;
+        let trail = [];
+        let tail = 5;
+        let points = 0;
+        let maxPoints = 0;
+        let lastKeyCode = 0;
+
+        function initGame() {
+          canvas = document.getElementById('snake');
+          ctx = canvas.getContext('2d');
+          document.addEventListener('keydown', onKeyDown);
+          bgLimitX = canvas.width / blockSize;
+          bgLimitY = canvas.height / blockSize;
+          const frames = 1000 / 15;
+          setInterval(runGame, frames);
+        }
+
+        function runGame() {
+          initSnakePosition();
+          handleCanvasBorder();
+          renderCanvasBackground();
+          renderSnakeMovements();
+          handleSnakeEatRedBlocks();
+          renderRedBlock();
+        }
+
+        function initSnakePosition() {
+          snakeMoveX += keyPressX;
+          snakeMoveY += keyPressY;
+        }
+
+        function resetMainVariables() {
+          snakeMoveX = 5;
+          snakeMoveY = 5;
+          blockSize = 20;
+          bgLimitX;
+          bgLimitY;
+          blockX = 20;
+          blockY = 20;
+          keyPressX = 0;
+          keyPressY = 0;
+          trail = [];
+          tail = 5;
+          points = 0;
+          lastKeyCode = 0;
+        }
+
+        function handleCanvasBorder() {
+          if (snakeMoveX < 0) {
+            snakeMoveX = bgLimitX - 1;
+          }
+          if (snakeMoveX > bgLimitX - 1) {
+            snakeMoveX = 0;
+          }
+          if (snakeMoveY < 0) {
+            snakeMoveY = bgLimitY - 1;
+          }
+          if (snakeMoveY > bgLimitY - 1) {
+            snakeMoveY = 0;
+          }
+        }
+
+        function renderCanvasBackground() {
+          ctx.fillStyle = 'black';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function renderSnakeMovements() {
+          const snakeColors = ['#006600', '#009900', '#00FF00'];
+          for (let i = 0; i < trail.length; i++) {
+            const snakePosX = trail[i].x;
+            const snakePosY = trail[i].y;
+            const snakeInitX = snakePosX * blockSize;
+            const snakeInitY = snakePosY * blockSize;
+            const snakeEndX = blockSize - 2;
+            const snakeEndY = blockSize - 2;
+            const colorIndex = i % snakeColors.length;
+            ctx.fillStyle = snakeColors[colorIndex];
+            ctx.fillRect(snakeInitX, snakeInitY, snakeEndX, snakeEndY);
+            // Game over when snake colides his tail
+            if (snakePosX === snakeMoveX && snakePosY === snakeMoveY) {
+              tail = 5;
+              trail = [];
+              maxPoints = points > maxPoints ? points : maxPoints;
+              if (points) {
+                resetMainVariables();
+                alert('Game over!');
+                document.getElementById('score').textContent = points;
+                document.getElementById('maxscore').textContent = maxPoints;
+              }
+            }
+          }
+          trail.push({ x: snakeMoveX, y: snakeMoveY });
+          while(trail.length > tail) {
+            trail.shift();
+          }
+        }
+
+        function handleSnakeEatRedBlocks() {
+          // Increase snake tail when it catchs the red block
+          // Render the new red block to a random position
+          if (blockX === snakeMoveX && blockY === snakeMoveY) {
+            points++;
+            document.getElementById('score').textContent = points;
+            tail++;
+            blockX = Math.floor(Math.random() * bgLimitX);
+            blockY = Math.floor(Math.random() * bgLimitY);
+          }
+        }
+
+        function renderRedBlock() {
+          ctx.fillStyle = '#990000';
+          const blockInitX = blockX * blockSize;
+          const blockInitY = blockY * blockSize;
+          const blockEndX = blockSize - 2;
+          const blockEndY = blockSize - 2;
+          ctx.fillRect(blockInitX, blockInitY, blockEndX, blockEndY);
+        }
+
+        function isReverseTyping(keyCode) {
+          if (lastKeyCode) {
+            if (lastKeyCode === 37 && keyCode === 39) {
+              return true;
+            }
+            if (lastKeyCode === 38 && keyCode === 40) {
+              return true;
+            }
+            if (lastKeyCode === 39 && keyCode === 37) {
+              return true;
+            }
+            if (lastKeyCode === 40 && keyCode === 38) {
+              return true;
+            }
+            return false;
+          }
+          return false;
+        }
+
+        function onKeyDown(e) {
+          if (!isReverseTyping(e.keyCode)) {
+            lastKeyCode = e.keyCode;
+            switch (e.keyCode) {
+              // Left arrow
+              case 37:
+                keyPressX = -1;
+                keyPressY = 0;
+                break;
+              // Up arrow
+              case 38:
+                keyPressX = 0;
+                keyPressY = -1;
+                break;
+              // Right arrow
+              case 39:
+                keyPressX = 1;
+                keyPressY = 0;
+                break;
+              // Down arrow
+              case 40:
+                keyPressX = 0;
+                keyPressY = 1;
+                break;
+            }
+          }
+        }
+
+        initGame();
+      })();
+    </script>
+  </body>
+</html>
